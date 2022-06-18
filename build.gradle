@@ -28,6 +28,6 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'de.medizininformatik-initiative.polar.mmi2fhir.MMI2FHIRAppication'
+        attributes 'Main-Class': 'de.medizininformatik_initiative.polar.mmi2fhir.MMI2FHIRAppication'
     }
 }

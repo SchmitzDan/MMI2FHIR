@@ -1,6 +1,9 @@
 /bin/
 /.checkstyle
 
+# Ignore MMI Files for license reasons
+/data/*.CSV
+
 # Ignore class files
 *.class
 
