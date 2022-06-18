@@ -8,7 +8,8 @@ spring:
     name: "mmi-to-fhir"
 
 data:
-  writeBundlesToFile: true
+  writeToFile: true
+  writeFileForResource: false
 
 fhir:
   url: "http://localhost:18080/fhir"

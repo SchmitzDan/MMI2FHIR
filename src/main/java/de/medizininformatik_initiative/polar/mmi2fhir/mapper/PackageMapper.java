@@ -7,6 +7,8 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Medication;
 import org.hl7.fhir.r4.model.Meta;
+import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.Ratio;
 import org.hl7.fhir.r4.model.Reference;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -57,7 +59,28 @@ public class PackageMapper {
                 new Identifier()
                     .setSystem("https://www.mmi.de/mmi-pharmindex/product")
                     .setValue(String.valueOf(mmiPackage.getProductId()))))
-        .setStrength(null); // TODO!!!
+        .setStrength(new Ratio()
+            .setNumerator(new Quantity()
+                .setValue(
+                    mmiPackage.getAmount() * mmiPackage.getFactor1() * mmiPackage.getFactor2()) // TODO:
+                                                                                                // korrekt?
+                                                                                                // Or
+                                                                                                // better
+                                                                                                // always
+                                                                                                // "piece"
+                                                                                                // of
+                                                                                                // product
+                                                                                                // and
+                                                                                                // amount
+                                                                                                // in
+                                                                                                // field
+                                                                                                // amount?
+                .setCode(mmiPackage.getPackageunitcode())
+                .setSystem(mmiPackage.getPackageunitcatalogid() == null ? null
+                    : "https://www.mmi.de/mmi-pharmindex/catalog/"
+                        + mmiPackage.getPackageunitcatalogid()))
+            .setDenominator(new Quantity()
+                .setValue(1)));
 
     return medication;
   }

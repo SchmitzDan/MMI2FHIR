@@ -13,16 +13,16 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Medication;
 import org.hl7.fhir.r4.model.Medication.MedicationIngredientComponent;
 import org.hl7.fhir.r4.model.Meta;
+import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Ratio;
 import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.r4.model.Type;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ItemMapper {
 
   public Medication map(final MMIItemCompressed item,
-      final Iterable<MMICompositionElement> activeIngredients,
+      final Iterable<Pair<MMICompositionElement, MMIMolecule>> activeIngredients,
       final Iterable<Pair<MMICompositionElement, MMIMolecule>> ingredients,
       final Iterable<Atc> atcs) {
     final var medication = new Medication();
@@ -59,76 +59,122 @@ public class ItemMapper {
     }
 
     // form
-    // TODO: map item.getPharmformcode to http://hl7.org/fhir/uv/ips/ValueSet/medicine-doseform
+    if (StringUtils.isNotBlank(item.getPharmformcode())) {
+      medication.setForm(new CodeableConcept()
+          .addCoding(new Coding()
+              .setCode(item.getPharmformcode())
+              .setSystem(
+                  "https://www.mmi.de/mmi-pharmindex/catalog/" + item.getPharmformcatalogid())));
+    }
 
-    // amount TODO!
-    // if (item.getBasecount() != null) {
-    // medication.setAmount(new Ratio() // TODO: units!!!
-    // .setNumerator(new Quantity()
-    // .setValue(item.getBasecount())
-    // .setSystem(null)
-    // .setCode(null)
-    // .setUnit(null))
-    // .setDenominator(null)); // TODO!!!
-    // }
+    // amount
+    if (item.getMainbasecount() != null) {
+      medication.setAmount(new Ratio()
+          .setNumerator(new Quantity()
+              .setValue(item.getMainbasecount().doubleValue())
+              .setCode(item.getMainbasemoleculeunitcode())
+              .setSystem(item.getMainbasemoleculeunitcatalogid() == null ? null
+                  : "https://www.mmi.de/mmi-pharmindex/catalog/"
+                      + item.getMainbasemoleculeunitcatalogid()))
+          .setDenominator(new Quantity(1)));
+    } else if (item.getBasecount() != null) {
+      medication.setAmount(new Ratio()
+          .setNumerator(new Quantity()
+              .setValue(item.getBasecount().doubleValue())
+              .setCode(item.getBasemoleculeunitcode())
+              .setSystem(item.getBasemoleculeunitcatalogid() == null ? null
+                  : "https://www.mmi.de/mmi-pharmindex/catalog/"
+                      + item.getBasemoleculeunitcatalogid()))
+          .setDenominator(new Quantity(1)));
+    }
 
     // ingredient
-    for (final MMICompositionElement ingredient : activeIngredients) {
+    // active
+    final var baseQuantity = item.getBasecount() == null ? new Quantity(1)
+        : new Quantity()
+            .setValue(item.getBasecount().doubleValue())
+            .setCode(item.getBasemoleculeunitcode())
+            .setSystem(item.getBasemoleculeunitcatalogid() == null ? null
+                : "https://www.mmi.de/mmi-pharmindex/catalog/"
+                    + item.getBasemoleculeunitcatalogid());
+
+    for (final var ingredient : activeIngredients) {
+      final var compositionElement = ingredient.getLeft();
+      final var molecule = ingredient.getRight();
+
       final var ingredientComponent = new MedicationIngredientComponent();
       ingredientComponent
           .setItem(new Reference()
+              .setDisplay(molecule.getName_plain())
               .setIdentifier(
                   new Identifier()
                       .setSystem("https://www.mmi.de/mmi-pharmindex/molecule")
-                      .setValue(String.valueOf(ingredient.getId()))))
+                      .setValue(String.valueOf(molecule.getId()))))
           .setIsActive(true);
 
-      if (ingredient.getMassfrom() != null) {
-        // TODO: set Strength
+      if (compositionElement.getMassfrom() != null) {
+        ingredientComponent.setStrength(new Ratio()
+            .setNumerator(new Quantity()
+                .setValue(compositionElement.getMassfrom())
+                .setCode(compositionElement.getMoleculeunitcode())
+                .setSystem(compositionElement.getMoleculeunitcatalogid() == null ? null
+                    : "https://www.mmi.de/mmi-pharmindex/catalog/"
+                        + compositionElement.getMoleculeunitcatalogid()))
+            .setDenominator(baseQuantity));
       }
 
       medication.addIngredient(ingredientComponent);
     }
 
+    // other
     for (final var pair : ingredients) {
+
+      final var ingredientComponent = new MedicationIngredientComponent();
+
       final var compositionElement = pair.getLeft();
       final var molecule = pair.getRight();
 
-      Type value;
-
       if (StringUtils.isBlank(molecule.getAsknumber())
           && StringUtils.isBlank(molecule.getCasregistrationnumber())) {
-        // either ask or cas provided, so we need to use a reference as a coding is
+        // neither ask nor cas provided, so we need to use a reference as a coding is
         // mandantory when using codeableConcept
-        value = new Reference()
+        ingredientComponent.setItem(new Reference()
             .setType("Substance")
             .setIdentifier(new Identifier()
                 .setSystem("https://www.mmi.de/mmi-pharmindex/molecule")
-                .setValue(String.valueOf(molecule.getId())));
+                .setValue(String.valueOf(molecule.getId()))));
       } else {
-        final var cc = new CodeableConcept()
-            .setText(molecule.getName_plain());
+        ingredientComponent.setItem(new CodeableConcept()
+            .setText(molecule.getName_plain()));
+
         // ask
         if (StringUtils.isNotBlank(molecule.getAsknumber())) {
-          cc.addCoding()
+          ingredientComponent.getItemCodeableConcept()
+              .addCoding()
               .setCode(molecule.getAsknumber())
               .setSystem("http://fhir.de/CodeSystem/ask");
         }
         // cas
         if (StringUtils.isNotBlank(molecule.getCasregistrationnumber())) {
-          cc.addCoding()
+          ingredientComponent.getItemCodeableConcept()
+              .addCoding()
               .setCode(molecule.getCasregistrationnumber())
               .setSystem("urn:oid:2.16.840.1.113883.6.61");
         }
-        value = cc;
       }
 
-      medication.addIngredient()
-          .setItem(value)
-          .setIsActive(false)
-          .setStrength(new Ratio()
-              .setNumerator(null) // TODO! What about massfrom is null?
-              .setDenominator(null)); // TODO!
+      if (compositionElement.getMassfrom() != null) {
+        ingredientComponent.setStrength(new Ratio()
+            .setNumerator(new Quantity()
+                .setValue(compositionElement.getMassfrom())
+                .setCode(compositionElement.getMoleculeunitcode())
+                .setSystem(compositionElement.getMoleculeunitcatalogid() == null ? null
+                    : "https://www.mmi.de/mmi-pharmindex/catalog/"
+                        + compositionElement.getMoleculeunitcatalogid()))
+            .setDenominator(baseQuantity));
+      }
+
+      medication.addIngredient(ingredientComponent);
     }
 
     return medication;

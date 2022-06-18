@@ -22,7 +22,7 @@ import io.micrometer.core.instrument.Metrics;
 
 @Component
 @ConditionalOnProperty(
-    value = "data.writeBundlesToFile",
+    value = "data.writeToFile",
     havingValue = "false",
     matchIfMissing = true)
 public class FhirBundleWriter implements ItemWriter<BundleEntryComponent> {

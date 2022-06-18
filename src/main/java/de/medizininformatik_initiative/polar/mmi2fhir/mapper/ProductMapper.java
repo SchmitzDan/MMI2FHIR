@@ -45,17 +45,32 @@ public class ProductMapper {
 
       ingredient
           .setItem(new Reference()
+              .setDisplay(item.getName())
               .setType("Medication")
               .setIdentifier(
                   new Identifier()
                       .setSystem("https://www.mmi.de/mmi-pharmindex/item")
                       .setValue(String.valueOf(item.getId()))));
-      if (item.getBasecount() != null) {
-        ingredient
-            .setStrength(new Ratio()
-                .setNumerator(
-                    new Quantity(item.getBasecount())) // TODO: unit?
-                .setDenominator(new Quantity(1))); // TODO: unit?
+
+      // should this match the logic for medication.amount on item level?
+      if (item.getMainbasecount() != null) {
+        ingredient.setStrength(new Ratio()
+            .setNumerator(new Quantity()
+                .setValue(item.getMainbasecount().doubleValue())
+                .setCode(item.getMainbasemoleculeunitcode())
+                .setSystem(item.getMainbasemoleculeunitcatalogid() == null ? null
+                    : "https://www.mmi.de/mmi-pharmindex/catalog/"
+                        + item.getMainbasemoleculeunitcatalogid()))
+            .setDenominator(new Quantity(1)));
+      } else if (item.getBasecount() != null) {
+        ingredient.setStrength(new Ratio()
+            .setNumerator(new Quantity()
+                .setValue(item.getBasecount().doubleValue())
+                .setCode(item.getBasemoleculeunitcode())
+                .setSystem(item.getBasemoleculeunitcatalogid() == null ? null
+                    : "https://www.mmi.de/mmi-pharmindex/catalog/"
+                        + item.getBasemoleculeunitcatalogid()))
+            .setDenominator(new Quantity(1)));
       }
       medication.addIngredient(ingredient);
     }

@@ -40,9 +40,6 @@ public class TaskConfig {
   @Value("${batch.chunkSize}")
   private int chunkSize;
 
-  @Value("${data.writeBundlesToFile}")
-  private boolean shouldWriteBundlesToFile;
-
   @Autowired
   private ItemWriter<BundleEntryComponent> writer;
 

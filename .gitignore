@@ -4,6 +4,9 @@
 # Ignore MMI Files for license reasons
 /data/*.CSV
 
+#Ignore created resources
+/out
+
 # Ignore class files
 *.class
 
@@ -39,5 +42,3 @@ local.properties
 .loadpath
 *.tmp
 .checkstyle
-
-/bundle-out

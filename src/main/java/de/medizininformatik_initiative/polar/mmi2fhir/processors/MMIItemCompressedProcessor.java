@@ -38,6 +38,7 @@ public class MMIItemCompressedProcessor
 
     final var activeIngredients = compositionElements.stream()
         .filter(x -> "A".equals(x.getMoleculetypecode()))
+        .map(x -> Pair.of(x, dao.loadMolecule(x.getMoleculeid())))
         .collect(Collectors.toList());
 
     log.trace("Identified {} compositionelements as active ingredients for item with id {}",

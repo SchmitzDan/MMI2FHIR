@@ -10,6 +10,7 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import ca.uhn.fhir.context.FhirContext;
@@ -20,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @ConditionalOnProperty(
-    value = "data.writeBundlesToFile",
+    value = "data.writeToFile",
     havingValue = "true",
     matchIfMissing = false)
 public class FhirBundleToFileWriter implements ItemWriter<BundleEntryComponent> {
@@ -31,7 +32,10 @@ public class FhirBundleToFileWriter implements ItemWriter<BundleEntryComponent> 
 
   private final FhirContext ctx = FhirContext.forR4();
   private final IParser fhirJsonParser = ctx.newJsonParser().setPrettyPrint(true);
-  private final Path fileOutDirectory = Paths.get("./bundle-out");
+  private final Path fileOutDirectory = Paths.get("./out");
+
+  @Value("${data.writeFileForResource}")
+  private boolean writeFileForResource;
 
   public FhirBundleToFileWriter() {
     if (!Files.exists(fileOutDirectory)) {
@@ -43,8 +47,18 @@ public class FhirBundleToFileWriter implements ItemWriter<BundleEntryComponent> 
     }
   }
 
+
   @Override
-  public void write(final List<? extends BundleEntryComponent> items) {
+  public void write(final List<? extends BundleEntryComponent> items) throws Exception {
+    if (writeFileForResource) {
+      writeResourceFiles(items);
+    } else {
+      writeBundleFile(items);
+    }
+
+  }
+
+  private void writeBundleFile(final List<? extends BundleEntryComponent> items) {
 
     final var bundle = new Bundle();
     bundle.setType(BundleType.BATCH);
@@ -65,5 +79,26 @@ public class FhirBundleToFileWriter implements ItemWriter<BundleEntryComponent> 
 
     log.info("Wrote a total of {} bundles ({} resources) to file", bundlesWrittenTotal.get(),
         resourcesWrittenTotal.get());
+  }
+
+
+  private void writeResourceFiles(final List<? extends BundleEntryComponent> items) {
+
+    for (final var item : items) {
+      final var resourceJson = fhirJsonParser.encodeResourceToString(item.getResource());
+
+      final var outFilePath = fileOutDirectory
+          .resolve(item.getResource().fhirType() + "_" + item.getResource().getId() + ".json");
+
+      try {
+        Files.write(outFilePath, resourceJson.getBytes());
+      } catch (final IOException e) {
+        log.warn("Failed to write resource to file", e);
+      }
+    }
+
+    resourcesWrittenTotal.addAndGet(items.size());
+
+    log.info("Wrote a total of {} resources to file", resourcesWrittenTotal.get());
   }
 }
