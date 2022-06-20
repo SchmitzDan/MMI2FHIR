@@ -3,10 +3,11 @@ version: "3.7"
 
 services:
   mmi2fhir:
-    image: ghcr.io/SchmitzDan/MMI2FHIR:${IMAGE_TAG}
+    image: ghcr.io/schmitzdan/mmi2fhir:main
     environment:
       - BATCH_CHUNKSIZE=${BATCH_CHUNKSIZE:-1000}
-      - DATA_WRITETOFILE=${DATA_WRITETOFILE:-false}
+      - DATA_WRITETOFILE=${DATA_WRITETOFILE:-true}
       - FHIR_URL=${FHIR_URL}
     volumes:
-      - /data:/data
+      - ./mmi_data:/data
+      - ./fhir_out:/out
