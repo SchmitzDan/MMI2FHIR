@@ -119,5 +119,5 @@ jobs:
         run: npm install -g semantic-release@17 @semantic-release/github @semantic-release/exec @semantic-release/error @semantic-release/changelog @commitlint/cli @semantic-release/commit-analyzer @semantic-release/release-notes-generator conventional-changelog-conventionalcommits
       - name: Release
         env:
-          GITHUB_TOKEN: ${{ secrets.MIRACUM_BOT_SEMANTIC_RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
