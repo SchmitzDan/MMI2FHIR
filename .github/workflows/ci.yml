@@ -2,11 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   release:
     types: [created]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 jobs:
   lint:
@@ -25,7 +25,7 @@ jobs:
         env:
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_DOCKERFILE: false
-          DEFAULT_BRANCH: master
+          DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FILTER_REGEX_EXCLUDE: "gradlew"
           VALIDATE_JAVA: false
