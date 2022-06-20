@@ -1,3 +1,4 @@
+---
 batch:
   chunkSize: 1000
 
@@ -13,7 +14,7 @@ data:
 
 fhir:
   url: "http://localhost:18080/fhir"
-  
+
 logging:
   level:
     de.medizininformatik_initiative: DEBUG
