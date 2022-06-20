@@ -13,5 +13,5 @@ All configuration is done in application.yml file. These values can be overridde
 | Variable | Description | Default |
 | --- | --- | --- |
 |BATCH_CHUNK_SIZE | Number of datasets processed in one chunk. This is also the number of resources in one result batch resource sent to the fhir server | 1000 |
-| DATA_WRITETOFILE | For test and debugging fhir batch resources can be written into files instead of sending them to a fhir server | false |
+| DATA_WRITETOFILE | For test and debugging fhir batch resources can be written into files instead of sending them to a fhir server | true |
 | FHIR_URL | URL of the receiving fhir server | - |
