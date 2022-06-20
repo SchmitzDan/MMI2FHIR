@@ -9,7 +9,7 @@ spring:
 
 data:
   writeToFile: true
-  writeFileForResource: false
+  writeFileForResource: true
 
 fhir:
   url: "http://localhost:18080/fhir"
