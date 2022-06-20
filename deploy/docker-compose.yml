@@ -6,7 +6,7 @@ services:
     image: ghcr.io/SchmitzDan/MMI2FHIR:${IMAGE_TAG}
     environment:
       - BATCH_CHUNKSIZE=${BATCH_CHUNKSIZE:-1000}
-      - DATA_WRITETOFILE=${DATA_WRITETOFILE:-true}
+      - DATA_WRITETOFILE=${DATA_WRITETOFILE:-false}
       - FHIR_URL=${FHIR_URL}
     volumes:
       - /data:/data
